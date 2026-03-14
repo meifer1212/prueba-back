@@ -16,24 +16,24 @@ class BodegasTableSeeder extends Seeder
      */
     public function run()
     {
-        $faker = Factory::create();
-        $userIds = User::query()->pluck('id')->all();
+        $objFaker = Factory::create();
+        $arrUserIds = User::query()->pluck('id')->all();
 
-        if (empty($userIds)) {
+        if (empty($arrUserIds)) {
             return;
         }
 
-        $totalBodegas = rand(8, 20);
+        $numTotalBodegas = rand(8, 20);
 
-        for ($i = 1; $i <= $totalBodegas; $i++) {
-            $responsable = $userIds[array_rand($userIds)];
-            $createdBy = $userIds[array_rand($userIds)];
-            $updatedBy = $userIds[array_rand($userIds)];
+        for ($numIndice = 1; $numIndice <= $numTotalBodegas; $numIndice++) {
+            $numIdResponsable = $arrUserIds[array_rand($arrUserIds)];
+            $createdBy = $arrUserIds[array_rand($arrUserIds)];
+            $updatedBy = $arrUserIds[array_rand($arrUserIds)];
 
             Bodega::create([
-                'nombre' => substr('Bodega ' . strtoupper($faker->unique()->bothify('??-###')), 0, 30),
-                'id_responsable' => $responsable,
-                'estado' => $faker->boolean(60),
+                'nombre' => substr('Bodega ' . strtoupper($objFaker->unique()->bothify('??-###')), 0, 30),
+                'id_responsable' => $numIdResponsable,
+                'estado' => $objFaker->boolean(60),
                 'created_by' => $createdBy,
                 'updated_by' => $updatedBy,
             ]);

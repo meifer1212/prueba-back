@@ -18,52 +18,52 @@ class InventariosTableSeeder extends Seeder
      */
     public function run()
     {
-        $bodegaIds = Bodega::query()->pluck('id')->all();
-        $productoIds = Producto::query()->pluck('id')->all();
-        $userIds = User::query()->pluck('id')->all();
+        $arrBodegaIds = Bodega::query()->pluck('id')->all();
+        $arrProductoIds = Producto::query()->pluck('id')->all();
+        $arrUserIds = User::query()->pluck('id')->all();
 
-        if (empty($bodegaIds) || empty($productoIds)) {
+        if (empty($arrBodegaIds) || empty($arrProductoIds)) {
             return;
         }
 
-        $combinaciones = [];
+        $arrCombinaciones = [];
 
-        foreach ($bodegaIds as $idBodega) {
-            foreach ($productoIds as $idProducto) {
-                $combinaciones[] = [
-                    'id_bodega' => $idBodega,
-                    'id_producto' => $idProducto,
+        foreach ($arrBodegaIds as $numIdBodega) {
+            foreach ($arrProductoIds as $numIdProducto) {
+                $arrCombinaciones[] = [
+                    'id_bodega' => $numIdBodega,
+                    'id_producto' => $numIdProducto,
                 ];
             }
         }
 
-        shuffle($combinaciones);
+        shuffle($arrCombinaciones);
 
-        $meta = min(count($combinaciones), rand(90, 260));
-        $seleccionadas = array_slice($combinaciones, 0, $meta);
+        $numMeta = min(count($arrCombinaciones), rand(90, 260));
+        $arrSeleccionadas = array_slice($arrCombinaciones, 0, $numMeta);
 
-        foreach ($seleccionadas as $combinacion) {
-            $createdBy = !empty($userIds) ? $userIds[array_rand($userIds)] : null;
-            $updatedBy = !empty($userIds) ? $userIds[array_rand($userIds)] : null;
-            $cantidad = rand(10, 500);
+        foreach ($arrSeleccionadas as $arrCombinacion) {
+            $createdBy = !empty($arrUserIds) ? $arrUserIds[array_rand($arrUserIds)] : null;
+            $updatedBy = !empty($arrUserIds) ? $arrUserIds[array_rand($arrUserIds)] : null;
+            $numCantidad = rand(10, 500);
 
-            $inventario = Inventario::updateOrCreate(
+            $objInventario = Inventario::updateOrCreate(
                 [
-                    'id_bodega' => $combinacion['id_bodega'],
-                    'id_producto' => $combinacion['id_producto'],
+                    'id_bodega' => $arrCombinacion['id_bodega'],
+                    'id_producto' => $arrCombinacion['id_producto'],
                 ],
                 [
-                    'cantidad' => $cantidad,
+                    'cantidad' => $numCantidad,
                     'created_by' => $createdBy,
                     'updated_by' => $updatedBy,
                 ]
             );
 
             Historial::create([
-                'cantidad' => $cantidad,
+                'cantidad' => $numCantidad,
                 'id_bodega_origen' => null,
-                'id_bodega_destino' => $combinacion['id_bodega'],
-                'id_inventario' => $inventario->id,
+                'id_bodega_destino' => $arrCombinacion['id_bodega'],
+                'id_inventario' => $objInventario->id,
                 'created_by' => $createdBy,
                 'updated_by' => $updatedBy,
             ]);

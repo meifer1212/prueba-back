@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -33,5 +34,21 @@ class Handler extends ExceptionHandler
     public function register()
     {
         //
+    }
+
+    /**
+     * Force JSON responses for API routes, even when Accept header is missing.
+     *
+     * @param mixed $request
+     * @param Throwable $e
+     * @return bool
+     */
+    protected function shouldReturnJson($request, Throwable $e)
+    {
+        if ($request->is('api/*')) {
+            return true;
+        }
+
+        return parent::shouldReturnJson($request, $e);
     }
 }

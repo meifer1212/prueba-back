@@ -24,9 +24,9 @@ class ProductoController extends Controller
      * - created_by (integer, nullable, debe existir en users.id)
      * - updated_by (integer, nullable, debe existir en users.id)
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $objRequest): JsonResponse
     {
-        $validated = $request->validate([
+        $arrValidated = $objRequest->validate([
             'nombre' => ['required', 'string', 'max:50'],
             'descripcion' => ['nullable', 'string', 'max:300'],
             'estado' => ['nullable', 'boolean'],
@@ -35,54 +35,54 @@ class ProductoController extends Controller
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $bodegaDefault = Bodega::query()
+        $objBodegaDefault = Bodega::query()
             ->where('estado', true)
             ->orderBy('id', 'asc')
             ->first();
 
-        if (! $bodegaDefault) {
+        if (! $objBodegaDefault) {
             return response()->json([
                 'message' => 'No existe una bodega por default disponible.',
             ], 422);
         }
 
-        $resultado = DB::transaction(function () use ($validated, $bodegaDefault) {
-            $producto = Producto::create([
-                'nombre' => $validated['nombre'],
-                'descripcion' => $validated['descripcion'] ?? null,
-                'estado' => $validated['estado'] ?? true,
-                'created_by' => $validated['created_by'] ?? null,
-                'updated_by' => $validated['updated_by'] ?? null,
+        $arrResultado = DB::transaction(function () use ($arrValidated, $objBodegaDefault) {
+            $objProducto = Producto::create([
+                'nombre' => $arrValidated['nombre'],
+                'descripcion' => $arrValidated['descripcion'] ?? null,
+                'estado' => $arrValidated['estado'] ?? true,
+                'created_by' => $arrValidated['created_by'] ?? null,
+                'updated_by' => $arrValidated['updated_by'] ?? null,
             ]);
 
-            $inventario = Inventario::create([
-                'id_producto' => $producto->id,
-                'id_bodega' => $bodegaDefault->id,
-                'cantidad' => $validated['cantidad_inicial'],
-                'created_by' => $validated['created_by'] ?? null,
-                'updated_by' => $validated['updated_by'] ?? null,
+            $objInventario = Inventario::create([
+                'id_producto' => $objProducto->id,
+                'id_bodega' => $objBodegaDefault->id,
+                'cantidad' => $arrValidated['cantidad_inicial'],
+                'created_by' => $arrValidated['created_by'] ?? null,
+                'updated_by' => $arrValidated['updated_by'] ?? null,
             ]);
 
-            $historial = Historial::create([
-                'cantidad' => $validated['cantidad_inicial'],
+            $objHistorial = Historial::create([
+                'cantidad' => $arrValidated['cantidad_inicial'],
                 'id_bodega_origen' => null,
-                'id_bodega_destino' => $bodegaDefault->id,
-                'id_inventario' => $inventario->id,
-                'created_by' => $validated['created_by'] ?? null,
-                'updated_by' => $validated['updated_by'] ?? null,
+                'id_bodega_destino' => $objBodegaDefault->id,
+                'id_inventario' => $objInventario->id,
+                'created_by' => $arrValidated['created_by'] ?? null,
+                'updated_by' => $arrValidated['updated_by'] ?? null,
             ]);
 
             return [
-                'producto' => $producto,
-                'inventario_inicial' => $inventario,
-                'bodega_default' => $bodegaDefault,
-                'historial' => $historial,
+                'producto' => $objProducto,
+                'inventario_inicial' => $objInventario,
+                'bodega_default' => $objBodegaDefault,
+                'historial' => $objHistorial,
             ];
         });
 
         return response()->json([
             'message' => 'Producto creado y stock inicial asignado en bodega por default.',
-            'data' => $resultado,
+            'data' => $arrResultado,
         ], 201);
     }
 
@@ -94,7 +94,7 @@ class ProductoController extends Controller
      */
     public function indexByTotalDesc(): JsonResponse
     {
-        $productos = Producto::query()
+        $colProductos = Producto::query()
             ->leftJoin('inventarios', 'productos.id', '=', 'inventarios.id_producto')
             ->select('productos.*')
             ->selectRaw('COALESCE(SUM(inventarios.cantidad), 0) as Total')
@@ -103,6 +103,6 @@ class ProductoController extends Controller
             ->orderBy('nombre', 'asc')
             ->get();
 
-        return response()->json($productos);
+        return response()->json($colProductos);
     }
 }

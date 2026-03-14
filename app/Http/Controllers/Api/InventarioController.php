@@ -21,9 +21,9 @@ class InventarioController extends Controller
      * - created_by (integer, nullable, debe existir en users.id)
      * - updated_by (integer, nullable, debe existir en users.id)
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $objRequest): JsonResponse
     {
-        $validated = $request->validate([
+        $arrValidated = $objRequest->validate([
             'id_producto' => ['required', 'integer', 'exists:productos,id'],
             'id_bodega' => ['required', 'integer', 'exists:bodegas,id'],
             'cantidad' => ['required', 'integer', 'min:1'],
@@ -31,65 +31,65 @@ class InventarioController extends Controller
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $resultado = DB::transaction(function () use ($validated) {
-            $inventario = Inventario::withTrashed()
-                ->where('id_producto', $validated['id_producto'])
-                ->where('id_bodega', $validated['id_bodega'])
+        $arrResultado = DB::transaction(function () use ($arrValidated) {
+            $objInventario = Inventario::withTrashed()
+                ->where('id_producto', $arrValidated['id_producto'])
+                ->where('id_bodega', $arrValidated['id_bodega'])
                 ->lockForUpdate()
                 ->first();
 
-            if (! $inventario) {
-                $nuevoInventario = Inventario::create([
-                    'id_producto' => $validated['id_producto'],
-                    'id_bodega' => $validated['id_bodega'],
-                    'cantidad' => $validated['cantidad'],
-                    'created_by' => $validated['created_by'] ?? null,
-                    'updated_by' => $validated['updated_by'] ?? null,
+            if (! $objInventario) {
+                $objNuevoInventario = Inventario::create([
+                    'id_producto' => $arrValidated['id_producto'],
+                    'id_bodega' => $arrValidated['id_bodega'],
+                    'cantidad' => $arrValidated['cantidad'],
+                    'created_by' => $arrValidated['created_by'] ?? null,
+                    'updated_by' => $arrValidated['updated_by'] ?? null,
                 ]);
 
-                $historial = Historial::create([
-                    'cantidad' => $validated['cantidad'],
+                $objHistorial = Historial::create([
+                    'cantidad' => $arrValidated['cantidad'],
                     'id_bodega_origen' => null,
-                    'id_bodega_destino' => $validated['id_bodega'],
-                    'id_inventario' => $nuevoInventario->id,
-                    'created_by' => $validated['created_by'] ?? null,
-                    'updated_by' => $validated['updated_by'] ?? null,
+                    'id_bodega_destino' => $arrValidated['id_bodega'],
+                    'id_inventario' => $objNuevoInventario->id,
+                    'created_by' => $arrValidated['created_by'] ?? null,
+                    'updated_by' => $arrValidated['updated_by'] ?? null,
                 ]);
 
                 return response()->json([
                     'message' => 'Registro de inventario creado.',
                     'accion' => 'insert',
-                    'data' => $nuevoInventario,
-                    'historial' => $historial,
+                    'data' => $objNuevoInventario,
+                    'historial' => $objHistorial,
                 ], 201);
             }
 
-            if ($inventario->trashed()) {
-                $inventario->restore();
+            if ($objInventario->trashed()) {
+                $objInventario->restore();
             }
 
-            $inventario->cantidad = $inventario->cantidad + $validated['cantidad'];
-            $inventario->updated_by = $validated['updated_by'] ?? $inventario->updated_by;
-            $inventario->save();
+            $objInventario->cantidad = $objInventario->cantidad + $arrValidated['cantidad'];
+            $objInventario->updated_by = $arrValidated['updated_by'] ?? $objInventario->updated_by;
+            $objInventario->save();
 
-            $historial = Historial::create([
-                'cantidad' => $validated['cantidad'],
+            $objHistorial = Historial::create([
+                'cantidad' => $arrValidated['cantidad'],
                 'id_bodega_origen' => null,
-                'id_bodega_destino' => $validated['id_bodega'],
-                'id_inventario' => $inventario->id,
-                'created_by' => $validated['created_by'] ?? null,
-                'updated_by' => $validated['updated_by'] ?? null,
+                'id_bodega_destino' => $arrValidated['id_bodega'],
+                'id_inventario' => $objInventario->id,
+                'created_by' => $arrValidated['created_by'] ?? null,
+                'updated_by' => $arrValidated['updated_by'] ?? null,
             ]);
 
             return response()->json([
                 'message' => 'Registro de inventario actualizado sumando la cantidad.',
                 'accion' => 'update',
-                'data' => $inventario,
-                'historial' => $historial,
+                'data' => $objInventario,
+                'historial' => $objHistorial,
             ]);
         });
 
-        return $resultado;
+        return $arrResultado;
     }
 
     /**
@@ -103,9 +103,9 @@ class InventarioController extends Controller
      * - created_by (integer, nullable, debe existir en users.id)
      * - updated_by (integer, nullable, debe existir en users.id)
      */
-    public function trasladar(Request $request): JsonResponse
+    public function trasladar(Request $objRequest): JsonResponse
     {
-        $validated = $request->validate([
+        $arrValidated = $objRequest->validate([
             'id_producto' => ['required', 'integer', 'exists:productos,id'],
             'id_bodega_origen' => ['required', 'integer', 'exists:bodegas,id'],
             'id_bodega_destino' => ['required', 'integer', 'different:id_bodega_origen', 'exists:bodegas,id'],
@@ -114,74 +114,74 @@ class InventarioController extends Controller
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $resultado = DB::transaction(function () use ($validated) {
-            $inventarioOrigen = Inventario::query()
-                ->where('id_producto', $validated['id_producto'])
-                ->where('id_bodega', $validated['id_bodega_origen'])
+        $arrResultado = DB::transaction(function () use ($arrValidated) {
+            $objInventarioOrigen = Inventario::query()
+                ->where('id_producto', $arrValidated['id_producto'])
+                ->where('id_bodega', $arrValidated['id_bodega_origen'])
                 ->lockForUpdate()
                 ->first();
 
-            if (! $inventarioOrigen) {
+            if (! $objInventarioOrigen) {
                 return response()->json([
                     'message' => 'No existe inventario del producto en la bodega de origen.',
                 ], 422);
             }
 
-            if ($inventarioOrigen->cantidad < $validated['cantidad']) {
+            if ($objInventarioOrigen->cantidad < $arrValidated['cantidad']) {
                 return response()->json([
                     'message' => 'Cantidad insuficiente en la bodega de origen para realizar el traslado.',
-                    'disponible' => $inventarioOrigen->cantidad,
-                    'solicitado' => $validated['cantidad'],
+                    'disponible' => $objInventarioOrigen->cantidad,
+                    'solicitado' => $arrValidated['cantidad'],
                 ], 422);
             }
 
-            $inventarioDestino = Inventario::withTrashed()
-                ->where('id_producto', $validated['id_producto'])
-                ->where('id_bodega', $validated['id_bodega_destino'])
+            $objInventarioDestino = Inventario::withTrashed()
+                ->where('id_producto', $arrValidated['id_producto'])
+                ->where('id_bodega', $arrValidated['id_bodega_destino'])
                 ->lockForUpdate()
                 ->first();
 
-            $inventarioOrigen->cantidad = $inventarioOrigen->cantidad - $validated['cantidad'];
-            $inventarioOrigen->updated_by = $validated['updated_by'] ?? $inventarioOrigen->updated_by;
-            $inventarioOrigen->save();
+            $objInventarioOrigen->cantidad = $objInventarioOrigen->cantidad - $arrValidated['cantidad'];
+            $objInventarioOrigen->updated_by = $arrValidated['updated_by'] ?? $objInventarioOrigen->updated_by;
+            $objInventarioOrigen->save();
 
-            if (! $inventarioDestino) {
-                $inventarioDestino = Inventario::create([
-                    'id_producto' => $validated['id_producto'],
-                    'id_bodega' => $validated['id_bodega_destino'],
-                    'cantidad' => $validated['cantidad'],
-                    'created_by' => $validated['created_by'] ?? null,
-                    'updated_by' => $validated['updated_by'] ?? null,
+            if (! $objInventarioDestino) {
+                $objInventarioDestino = Inventario::create([
+                    'id_producto' => $arrValidated['id_producto'],
+                    'id_bodega' => $arrValidated['id_bodega_destino'],
+                    'cantidad' => $arrValidated['cantidad'],
+                    'created_by' => $arrValidated['created_by'] ?? null,
+                    'updated_by' => $arrValidated['updated_by'] ?? null,
                 ]);
             } else {
-                if ($inventarioDestino->trashed()) {
-                    $inventarioDestino->restore();
+                if ($objInventarioDestino->trashed()) {
+                    $objInventarioDestino->restore();
                 }
 
-                $inventarioDestino->cantidad = $inventarioDestino->cantidad + $validated['cantidad'];
-                $inventarioDestino->updated_by = $validated['updated_by'] ?? $inventarioDestino->updated_by;
-                $inventarioDestino->save();
+                $objInventarioDestino->cantidad = $objInventarioDestino->cantidad + $arrValidated['cantidad'];
+                $objInventarioDestino->updated_by = $arrValidated['updated_by'] ?? $objInventarioDestino->updated_by;
+                $objInventarioDestino->save();
             }
 
-            $historial = Historial::create([
-                'cantidad' => $validated['cantidad'],
-                'id_bodega_origen' => $validated['id_bodega_origen'],
-                'id_bodega_destino' => $validated['id_bodega_destino'],
-                'id_inventario' => $inventarioOrigen->id,
-                'created_by' => $validated['created_by'] ?? null,
-                'updated_by' => $validated['updated_by'] ?? null,
+            $objHistorial = Historial::create([
+                'cantidad' => $arrValidated['cantidad'],
+                'id_bodega_origen' => $arrValidated['id_bodega_origen'],
+                'id_bodega_destino' => $arrValidated['id_bodega_destino'],
+                'id_inventario' => $objInventarioOrigen->id,
+                'created_by' => $arrValidated['created_by'] ?? null,
+                'updated_by' => $arrValidated['updated_by'] ?? null,
             ]);
 
             return response()->json([
                 'message' => 'Traslado realizado correctamente.',
                 'data' => [
-                    'origen' => $inventarioOrigen,
-                    'destino' => $inventarioDestino,
-                    'historial' => $historial,
+                    'origen' => $objInventarioOrigen,
+                    'destino' => $objInventarioDestino,
+                    'historial' => $objHistorial,
                 ],
             ]);
         });
 
-        return $resultado;
+        return $arrResultado;
     }
 }

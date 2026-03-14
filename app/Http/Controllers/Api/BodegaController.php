@@ -15,9 +15,9 @@ class BodegaController extends Controller
      */
     public function index(): JsonResponse
     {
-        $bodegas = Bodega::orderBy('nombre', 'asc')->get();
+        $colBodegas = Bodega::orderBy('nombre', 'asc')->get();
 
-        return response()->json($bodegas);
+        return response()->json($colBodegas);
     }
 
     /**
@@ -30,9 +30,9 @@ class BodegaController extends Controller
      * - created_by (integer, opcional)
      * - updated_by (integer, opcional)
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $objRequest): JsonResponse
     {
-        $validated = $request->validate([
+        $arrValidated = $objRequest->validate([
             'nombre' => ['required', 'string', 'max:30'],
             'id_responsable' => ['required', 'integer', 'exists:users,id'],
             'estado' => ['nullable', 'boolean'],
@@ -40,14 +40,14 @@ class BodegaController extends Controller
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $bodega = Bodega::create([
-            'nombre' => $validated['nombre'],
-            'id_responsable' => $validated['id_responsable'],
-            'estado' => $validated['estado'] ?? true,
-            'created_by' => $validated['created_by'] ?? null,
-            'updated_by' => $validated['updated_by'] ?? null,
+        $objBodega = Bodega::create([
+            'nombre' => $arrValidated['nombre'],
+            'id_responsable' => $arrValidated['id_responsable'],
+            'estado' => $arrValidated['estado'] ?? true,
+            'created_by' => $arrValidated['created_by'] ?? null,
+            'updated_by' => $arrValidated['updated_by'] ?? null,
         ]);
 
-        return response()->json($bodega, 201);
+        return response()->json($objBodega, 201);
     }
 }

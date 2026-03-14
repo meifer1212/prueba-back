@@ -15,32 +15,32 @@ class UsersTableSeeder extends Seeder
      */
     public function run()
     {
-        $faker = Factory::create();
-        $totalUsers = rand(25, 60);
+        $objFaker = Factory::create();
+        $numTotalUsers = rand(25, 60);
 
-        $primerUsuario = User::create([
-            'nombre' => substr($faker->name(), 0, 50),
-            'foto' => 'users/' . $faker->uuid() . '.png',
+        $objPrimerUsuario = User::create([
+            'nombre' => substr($objFaker->name(), 0, 50),
+            'foto' => 'users/' . $objFaker->uuid() . '.png',
             'estado' => true,
             'created_by' => null,
             'updated_by' => null,
         ]);
 
-        $userIds = [$primerUsuario->id];
+        $arrUserIds = [$objPrimerUsuario->id];
 
-        for ($i = 2; $i <= $totalUsers; $i++) {
-            $createdBy = $userIds[array_rand($userIds)];
-            $updatedBy = $userIds[array_rand($userIds)];
+        for ($numIndice = 2; $numIndice <= $numTotalUsers; $numIndice++) {
+            $createdBy = $arrUserIds[array_rand($arrUserIds)];
+            $updatedBy = $arrUserIds[array_rand($arrUserIds)];
 
-            $nuevoUsuario = User::create([
-                'nombre' => substr($faker->unique()->name(), 0, 50),
-                'foto' => 'users/' . $faker->uuid() . '.png',
-                'estado' => $faker->boolean(90),
+            $objNuevoUsuario = User::create([
+                'nombre' => substr($objFaker->unique()->name(), 0, 50),
+                'foto' => 'users/' . $objFaker->uuid() . '.png',
+                'estado' => $objFaker->boolean(90),
                 'created_by' => $createdBy,
                 'updated_by' => $updatedBy,
             ]);
 
-            $userIds[] = $nuevoUsuario->id;
+            $arrUserIds[] = $objNuevoUsuario->id;
         }
     }
 }
