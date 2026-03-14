@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -50,5 +51,20 @@ class Handler extends ExceptionHandler
         }
 
         return parent::shouldReturnJson($request, $e);
+    }
+
+    /**
+     * Customize validation JSON response for API routes in Spanish.
+     *
+     * @param mixed $request
+     * @param ValidationException $exception
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function invalidJson($request, ValidationException $exception)
+    {
+        return response()->json([
+            'message' => 'Los datos proporcionados no son validos.',
+            'errors' => $exception->errors(),
+        ], $exception->status);
     }
 }

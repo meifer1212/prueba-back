@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Carbon\Carbon;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        $txtLocale = config('app.locale');
+
+        Carbon::setLocale($txtLocale);
+        setlocale(
+            LC_TIME,
+            'es_CO.UTF-8',
+            'es_CO',
+            'Spanish_Colombia.1252',
+            'es_ES.UTF-8',
+            'es_ES',
+            'es'
+        );
     }
 }
